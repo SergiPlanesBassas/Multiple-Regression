@@ -1,0 +1,127 @@
+install.packages("randomForest")
+
+library(readr)
+library(caret)
+library(lattice)
+library(ggplot2)
+library(corrplot)
+library(reshape2)
+library(e1071)
+library(randomForest)
+
+summary
+
+
+#Import Datasets
+
+productattributes<-read.csv("~/Downloads/existingproductattributes2017.csv")
+newproductattributes<-read.csv("~/Downloads/newproductattributes2017.csv")
+
+#Data analysis
+
+summary(productattributes)
+str(productattributes)
+is.na(productattributes)
+sum(is.na(productattributes))
+colSums(is.na(productattributes))
+
+
+#Dummify
+
+dmy<-dummyVars("~ .", data = productattributes)
+readyproductattributes<-data.frame(predict(dmy, newdata=productattributes))
+
+readyproductattributes
+readyproductattributes$BestSellersRank<-NULL
+
+
+#Finding correlation between variables
+
+datacorrelation<-cor(readyproductattributes)
+datacorrelation
+round(datacorrelation, digits = 2)
+
+
+corrplot(datacorrelation, method = "color", type = "lower",tl.srt = 45, tl.col = "black", order = "AOE", diag = F, cex.axis=0.2)
+
+
+#Clean Attributes/NA
+productattributes$BestSellersRank<-NULL
+productattributes$ProductNum<-NULL
+productattributes$ShippingWeight<-NULL
+productattributes$ProductDepth<-NULL
+productattributes$ProductWidth<-NULL
+productattributes$ProductHeight<-NULL
+productattributes$x5StarReviews<-NULL
+productattributes$x3StarReviews<-NULL
+productattributes$x1StarReviews<-NULL
+productattributes$ProfitMargin<-NULL
+productattributes$ProductType.ExtendedWarranty<-NULL
+productattributes$ProductType.Accessories<-NULL
+productattributes$ProductType.Display<-NULL
+productattributes$ProductType.GameConsole<-NULL
+productattributes$ProductType.Laptop<-NULL
+productattributes$ProductType.Netbook<-NULL
+productattributes$ProductType.PC<-NULL
+productattributes$ProductType.Printer<-NULL
+productattributes$ProductType.PrinterSupplies<-NULL
+productattributes$ProductType.Smartphone<-NULL
+productattributes$ProductType.Software<-NULL
+productattributes$ProductType.Tablet<-NULL
+productattributes$ProductType<-NULL
+
+
+variable.names(productattributes)
+
+####Finding Outlier ###
+boxplot(productattributes$Price)
+boxplot(productattributes$x4StarReviews)
+boxplot(productattributes$x2StarReviews)
+boxplot(productattributes$PositiveServiceReview)
+boxplot(productattributes$NegativeServiceReview)
+boxplot(productattributes$Recommendproduct)
+boxplot(productattributes$Volume)
+
+#Remove Outliers (Dependent variable)
+
+outlierDataSet <- productattributes
+outlierColumn <- productattributes$Volume
+productattributes <- outlierDataSet[outlierColumn > (quantile(outlierColumn)[[2]] -
+                                            1.5*IQR(outlierColumn)),]
+productattributes<- outlierDataSet[outlierColumn < (quantile(outlierColumn)[[4]] +
+                                            1.5*IQR(outlierColumn)),]
+
+#Cross Validation
+fitControl<-trainControl(method = "repeatedcv", number = 10, repeats = 1)
+
+#Model
+set.seed(1000)
+intraining<-createDataPartition(productattributes$Volume, p=0.7, list = F)
+train<-productattributes[intraining,]
+test<-productattributes[-intraining,]
+
+
+a<- c("lm","rf","knn","svmLinear","svmRadial")
+compare<-c()
+for (i in a) {
+  model<-train(Volume~ ., data=train, method=i, trcontrol=fitControl)
+  pred<-predict(model, test)
+  metric<-postResample(test$Volume, pred)
+  compare<-cbind(metric,compare)
+}
+
+compare
+colnames(compare)<-a
+compare
+
+lastdata <- as.data.frame(melt(compare))
+lastdata
+
+ggplot(lastdata, aes(x=X1, y=value))+
+  geom_col()+facet_wrap(lastdata$X2)
+
+
+summary(productattributes)
+boxplot(productattributes$Volume)
+
+

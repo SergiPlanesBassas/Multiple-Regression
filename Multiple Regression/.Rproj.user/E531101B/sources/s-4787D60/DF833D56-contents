@@ -1,0 +1,57 @@
+library(readr)
+
+
+print("Hello world")
+print("Hello Sergi")
+DatasetName <- read.csv("Macintosh HD\Usuarios\Sergi\estritorio\cars.csv")
+
+
+
+DatasetName<- read.csv("Macintosh HD/Usuarios/Sergi/estritorio/cars.csv")
+
+#--- import cars dataset
+cars <- read_csv("~/Desktop/cars.csv")
+
+summary(cars)
+is.na(cars)
+names(cars)<-c("name","speed","distance")
+
+set.seed(123)
+
+#selectionSize
+
+trainSize<-round(nrow(cars)*0.8)
+testSize<-nrow(cars)-trainSize
+trainSize
+testSize
+
+#modelvalidation
+
+training_indices<-sample(seq_len(nrow(cars)),size =trainSize)
+trainSet<-cars[training_indices,]
+testSet<-cars[-training_indices,]
+
+#eliminate negative values from predictions
+
+model1<-lm(distance ~ 0 + speed, trainSet)
+summary(model1)
+
+#Predictionresults
+
+prediction1<- predict(model1,testSet)
+prediction1
+
+#plots
+
+boxplot(cars$speed)
+
+boxplot(cars$distance)
+
+Time<- cars$distance/cars$speed
+plot(testSet$speed,testSet$distance,col='red')
+points(testSet$speed,prediction1,col="green")
+
+
+
+
+     

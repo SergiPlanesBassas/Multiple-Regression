@@ -1,0 +1,20 @@
+#install.packages("caret", dependencies = T)
+library(caret)
+
+#install.packages("lattice")
+
+library(ggplot2)
+
+complet<-read.csv("~/Downloads/CompleteResponses.csv")
+summary(complet)
+is.na(complet)
+names(complet)
+
+#Correlation Matrix
+library(corrplot)
+head(complet)
+complet.correlation <- cor(complet)
+complet.correlation
+
+round(complet.correlation, digits = 3)
+corrplot(complet.correlation)

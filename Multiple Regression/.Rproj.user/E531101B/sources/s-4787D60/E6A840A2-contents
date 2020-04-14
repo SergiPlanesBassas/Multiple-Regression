@@ -1,0 +1,90 @@
+install.packages("randomForest")
+
+library(readr)
+library(caret)
+library(lattice)
+library(ggplot2)
+library(corrplot)
+library(reshape2)
+library(e1071)
+library(randomForest)
+
+
+
+#Import Datasets
+
+productattributes<-read.csv("~/Downloads/existingproductattributes2017.csv")
+newproductattributes<-read.csv("~/Downloads/newproductattributes2017.csv")
+
+#Data analysis
+
+summary(productattributes)
+str(productattributes)
+is.na(productattributes)
+sum(is.na(productattributes))
+colSums(is.na(productattributes))
+
+
+#Dummify
+
+dmy<-dummyVars("~ .", data = productattributes)
+readyproductattributes<-data.frame(predict(dmy, newdata=productattributes))
+
+readyproductattributes
+
+#Clean Attributes/NA
+readyproductattributes$BestSellersRank<-NULL
+readyproductattributes$ProductNum<-NULL
+readyproductattributes$ShippingWeight<-NULL
+readyproductattributes$ProductDepth<-NULL
+readyproductattributes$ProductWidth<-NULL
+readyproductattributes$ProductHeight<-NULL
+readyproductattributes$x5StarReviews<-NULL
+readyproductattributes$x3StarReviews<-NULL
+readyproductattributes$x1StarReviews<-NULL
+
+
+
+variable.names(readyproductattributes)
+
+#finding correlation between variables
+
+datacorrelation<-cor(readyproductattributes)
+datacorrelation
+round(datacorrelation, digits = 2)
+corrplot(datacorrelation, method = "color", type = "lower",tl.srt = 45, tl.col = "black", order = "AOE", diag = F, cex.axis=0.2)
+
+
+#MODEL
+set.seed(123)
+intrainSize<-createDataPartition(readyproductattributes$Volume, p=0.7, list = FALSE)
+intrainSize
+trainSize<-readyproductattributes[intrainSize,]
+testSize<-readyproductattributes[-intrainSize,]
+
+
+#Cross Validation
+fitControl<-trainControl(method = "repeatedcv", number = 10, repeats = 1)
+
+#Random Forest
+modelrf<-train(y=trainSize$Volume, x=trainSize[1:19], method="rf", trControl = fitControl, tuneLength = 10)
+modelrf
+prediction<-predict(modelrf,testSize)
+prediction
+Accuracy<-postResample(prediction,testSize$Volume)
+Accuracy
+
+
+#Knn
+modelknn<-train(y=trainSize$Volume, x=trainSize[1:19], 8method="knn", trControl = fitControl, tuneLength = 5)
+modelknn
+prediction<-predict(modelknn,testSize)
+prediction
+Accuracy<-postResample(prediction,testSize$Volume)
+Accuracy
+
+
+
+ggplot(readyproductattributes.melted, aes(x=Var1, y=Var2, fill=value))+geom_tile()
+
+
