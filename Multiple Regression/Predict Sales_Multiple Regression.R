@@ -18,7 +18,7 @@ library(reshape)
 
 ####Load the Datasets####
 exist_products <-read.csv("~/Desktop/Multiple Regression/existing_products.csv")
-new_products <-read.csv("~/Desktop/Multiple Regression/existing_products.csv")
+new_products <-read.csv("~/Desktop/Multiple Regression/new_products.csv")
 exist_products <-data.frame(exist_products)
 new_products <-data.frame(new_products)
 
@@ -114,6 +114,9 @@ ggplot(exist_products, aes(x=NegativeServiceReview, y = Volume)) +
   geom_point() +
   geom_smooth()
 
+#Find outliers that I observed that the graphs before showed were distrustful
+exist_products[which(exist_products$x2StarReviews > 200),"ProductNum"]
+
 #Removing the observations that the graphs before showed were distrustful
 exist_products <- exist_products[-which(exist_products$ProductNum == 118),]
 exist_products <- exist_products[-which(exist_products$ProductNum == 123),]
@@ -122,6 +125,7 @@ exist_products <- exist_products[-which(exist_products$ProductNum == 135),]
 
 #Placing the dependent variable in the first position
 exist_products <- subset(exist_products, select=c(ncol(exist_products),1:(ncol(exist_products)-1)))
+#subset(exist_products, select=c(17,1:16)))
 
 #Check correlation
 #Dummify with feature engineering
@@ -217,6 +221,8 @@ pred_metric <- postResample(testing$Volume, pred)
 pred_metric
 error <- data.frame(pred - testing$Volume)
 colnames(error) <- c("err")
+
+#Check distribution errors
 ggplot(error, aes(err)) + 
   geom_histogram(bins=20)
 
@@ -241,7 +247,7 @@ new_products$Volume <- predictions_new_products
 
 #Predictions by product type
 #Feature Engineering
-new_products <- new_products[new_products$ProductTypeLaptop == 1 | new_products$ProductTypePC == 1 | new_products$ProductTypeNetbook == 1 | new_products$ProductTypeSmartphone == 1,]
+new_products <- new_products[new_products$ProductType.Laptop == 1 | new_products$ProductType.PC == 1 | new_products$ProductType.Netbook == 1 | new_products$ProductType.Smartphone == 1,]
 
 new_products_undummy$Volume <- predictions_new_products
 
@@ -253,5 +259,27 @@ ggplot(new_products_undummy, aes(x = ProductType,y = Volume, fill = ProductType)
 ggplot(new_products_undummy, aes(x="", y=Volume, fill=ProductType)) +
   geom_bar(width = 1, stat='identity') +
   coord_polar("y")
+
+#EXTRA
+
+#Plot the Positive Service and 4 Star Reviews with Volume and Product Type
+EPA2 <-read.csv("~/Desktop/Multiple Regression/existing_products.csv")
+
+#Remove outliers from the dependent variable
+OutlierDataSet <- EPA2
+OutlierColumn <- OutlierDataSet[,ncol(OutlierDataSet)]
+OutlierDataSet <- OutlierDataSet[OutlierColumn > (quantile(OutlierColumn)[[2]] - 1.5*IQR(OutlierColumn)),]
+OutlierDataSet <- OutlierDataSet[OutlierColumn < (quantile(OutlierColumn)[[4]] + 1.5*IQR(OutlierColumn)),]
+EPA2 <- OutlierDataSet
+
+ggplot(EPA2, aes(x =PositiveServiceReview, y =x4StarReviews,color = ProductType)) +
+  geom_point(aes(size=Volume)) +
+  xlab("Postive Service Reviews") + ylab("4 Star Reviews") + ggtitle("Impact of customer and service reviews on sales volume")
+
+
+
+
+
+
 
 
